@@ -44,50 +44,48 @@ function displaySalesByDepartment() { // displays product sales by department
 }
 
 function addNewDepartment() {// allows manager to add a completely new department to the store
-    inquirer
-        .prompt([
-            {
-                type: "input",
-                message: "What is the department name?",
-                name: "department"
-            },
-            {
-                type: "input",
-                message: "What are the overhead costs of the department?",
-                name: "overhead",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    }
-                    return false;
+    inquirer.prompt([
+        {
+            type: "input",
+            message: "What is the department name?",
+            name: "department"
+        },
+        {
+            type: "input",
+            message: "What are the overhead costs of the department?",
+            name: "overhead",
+            validate: function (value) {
+                if (isNaN(value) === false) {
+                    return true;
                 }
+                return false;
             }
-        ])
-        .then(function (answer) {
-            connection.query(
-                "INSERT INTO departments SET ?",
-                {
-                    department_name: answer.department,
-                    overhead_costs: parseInt(answer.overhead) || 0
-                },
-                function (err) {
-                    if (err) throw err;
-                    console.log("Your department was added successfully!");
-                    inquirer.prompt([
-                        {
-                            type: "list",
-                            message: "Would you like to add other departments?",
-                            name: "add",
-                            choices: ["Y", "N"],
-                        }
-                    ]).then(function (response) {
-                        if (response.add === 'Y') {
-                            addNewDepartment();
-                        } else {
-                            initialPrompt();
-                        }
-                    });
-                }
-            );
-        });
+        }
+    ]).then(function (answer) {
+        connection.query(
+            "INSERT INTO departments SET ?",
+            {
+                department_name: answer.department,
+                overhead_costs: parseInt(answer.overhead) || 0
+            },
+            function (err) {
+                if (err) throw err;
+                console.log("Your department was added successfully!");
+                inquirer.prompt([
+                    {
+                        type: "list",
+                        message: "Would you like to add other departments?",
+                        name: "add",
+                        choices: ["Y", "N"],
+                    }
+                ]).then(function (response) {
+                    if (response.add === 'Y') {
+                        addNewDepartment();
+                    } else {
+                        initialPrompt();
+                    }
+                });
+            }
+        );
+    });
 }

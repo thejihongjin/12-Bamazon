@@ -135,76 +135,74 @@ function restockInventory() {
 function addNewProduct() { // allows manager to add a completely new product to the store
     connection.query("SELECT * FROM departments", function (err, results) {
         if (err) throw err;
-        inquirer
-            .prompt([
-                {
-                    type: "input",
-                    message: "What is the product name?",
-                    name: "product"
-                },
-                {
-                    type: "rawlist",
-                    message: "What department is the product in?",
-                    choices: function () {
-                        var departmentArr = [];
-                        for (var i = 0; i < results.length; i++) {
-                            departmentArr.push(results[i].department_name);
-                        }
-                        return departmentArr;
-                    },
-                    name: "department"
-                },
-                {
-                    type: "input",
-                    message: "How much does the product cost?",
-                    name: "price",
-                    validate: function (value) {
-                        if (isNaN(value) === false) {
-                            return true;
-                        }
-                        return false;
+        inquirer.prompt([
+            {
+                type: "input",
+                message: "What is the product name?",
+                name: "product"
+            },
+            {
+                type: "rawlist",
+                message: "What department is the product in?",
+                choices: function () {
+                    var departmentArr = [];
+                    for (var i = 0; i < results.length; i++) {
+                        departmentArr.push(results[i].department_name);
                     }
+                    return departmentArr;
                 },
-                {
-                    type: "input",
-                    message: "How many units of this product would you like to stock?",
-                    name: "quantity",
-                    validate: function (value) {
-                        if (isNaN(value) === false) {
-                            return true;
-                        }
-                        return false;
+                name: "department"
+            },
+            {
+                type: "input",
+                message: "How much does the product cost?",
+                name: "price",
+                validate: function (value) {
+                    if (isNaN(value) === false) {
+                        return true;
                     }
+                    return false;
                 }
-            ])
-            .then(function (answer) {
-                connection.query(
-                    "INSERT INTO products SET ?",
-                    {
-                        product_name: answer.product,
-                        department_name: answer.department,
-                        price: parseInt(answer.price) || 0,
-                        stock_quantity: parseInt(answer.quantity) || 0
-                    },
-                    function (err) {
-                        if (err) throw err;
-                        console.log("Your product was added successfully!");
-                        inquirer.prompt([
-                            {
-                                type: "list",
-                                message: "Would you like to add other products?",
-                                name: "add",
-                                choices: ["Y", "N"],
-                            }
-                        ]).then(function (response) {
-                            if (response.add === 'Y') {
-                                addNewProduct();
-                            } else {
-                                initialPrompt();
-                            }
-                        });
+            },
+            {
+                type: "input",
+                message: "How many units of this product would you like to stock?",
+                name: "quantity",
+                validate: function (value) {
+                    if (isNaN(value) === false) {
+                        return true;
                     }
-                );
-            });
+                    return false;
+                }
+            }
+        ]).then(function (answer) {
+            connection.query(
+                "INSERT INTO products SET ?",
+                {
+                    product_name: answer.product,
+                    department_name: answer.department,
+                    price: parseInt(answer.price) || 0,
+                    stock_quantity: parseInt(answer.quantity) || 0
+                },
+                function (err) {
+                    if (err) throw err;
+                    console.log("Your product was added successfully!");
+                    inquirer.prompt([
+                        {
+                            type: "list",
+                            message: "Would you like to add other products?",
+                            name: "add",
+                            choices: ["Y", "N"],
+                        }
+                    ]).then(function (response) {
+                        if (response.add === 'Y') {
+                            addNewProduct();
+                        } else {
+                            initialPrompt();
+                        }
+                    });
+                }
+            );
+        });
     });
 }
