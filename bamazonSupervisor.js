@@ -1,19 +1,93 @@
-// ### Challenge #3: Supervisor View (Final Level)
+var inquirer = require("inquirer");
+var mysql = require("mysql");
+var consoleTable = require("console.table");
 
-// 2. Modify your`bamazonCustomer.js` app so that when a customer purchases anything from the store, the price of the product multiplied by the quantity purchased is added to the product's product_sales column.
-//    * Make sure your app still updates the inventory listed in the `products` column.
-// 3. Create another Node app called `bamazonSupervisor.js`. Running this application will list a set of menu options:
-//    * View Product Sales by Department
-//    * Create New Department
-// 4. When a supervisor selects `View Product Sales by Department`, the app should display a summarized table in their terminal/bash window. Use the table below as a guide.
-// | department_id | department_name | over_head_costs | product_sales | total_profit |
-// | ------------- | --------------- | --------------- | ------------- | ------------ |
-// | 01            | Electronics     | 10000           | 20000         | 10000        |
-// | 02            | Clothing        | 60000           | 100000        | 40000        |
-// 5. The `total_profit` column should be calculated on the fly using the difference between `over_head_costs` and `product_sales`. `total_profit` should not be stored in any database. You should use a custom alias.
-// 6. If you can't get the table to display properly after a few hours, then feel free to go back and just add `total_profit` to the `departments` table.
-//    * Hint: You may need to look into aliases in MySQL.
-//    * Hint: You may need to look into GROUP BYs.
-//    * Hint: You may need to look into JOINS.
-//    * **HINT**: There may be an NPM package that can log the table to the console. What's is it? Good question :)
-// - - -
+var connection = mysql.createConnection({
+    host: "localhost",
+    port: 8889,
+    user: "root",
+    password: "root",
+    database: "bamazon"
+});
+
+connection.connect(function (err) {
+    if (err) throw err;
+    initialPrompt();
+});
+
+function initialPrompt() {
+    inquirer.prompt([
+        {
+            type: "list",
+            message: "What would you like to do?",
+            choices: ["View product sales by department", "Create new department", "EXIT"],
+            name: "action"
+        }
+    ]).then(function (response) {
+        if (response.action === "View product sales by department") {
+            displaySalesByDepartment();
+        }
+        else if (response.action === "Create new department") {
+            addNewDepartment();
+        } else {
+            connection.end();
+        }
+    });
+}
+
+function displaySalesByDepartment() { // displays product sales by department
+    connection.query("SELECT distinct department_id,d.department_name,overhead_costs,SUM(ifnull(product_sales,0)) total_product_sales,SUM(ifnull(product_sales,0))-overhead_costs total_profit FROM products p RIGHT JOIN departments d ON p.department_name=d.department_name GROUP BY department_id,d.department_name,overhead_costs ORDER BY department_id", function (err, results) {
+        if (err) throw err;
+        console.table(results);
+        initialPrompt();
+    });
+}
+
+function addNewDepartment() {// allows manager to add a completely new department to the store
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                message: "What is the department name?",
+                name: "department"
+            },
+            {
+                type: "input",
+                message: "What are the overhead costs of the department?",
+                name: "overhead",
+                validate: function (value) {
+                    if (isNaN(value) === false) {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+        ])
+        .then(function (answer) {
+            connection.query(
+                "INSERT INTO departments SET ?",
+                {
+                    department_name: answer.department,
+                    overhead_costs: parseInt(answer.overhead) || 0
+                },
+                function (err) {
+                    if (err) throw err;
+                    console.log("Your department was added successfully!");
+                    inquirer.prompt([
+                        {
+                            type: "list",
+                            message: "Would you like to add other departments?",
+                            name: "add",
+                            choices: ["Y", "N"],
+                        }
+                    ]).then(function (response) {
+                        if (response.add === 'Y') {
+                            addNewDepartment();
+                        } else {
+                            initialPrompt();
+                        }
+                    });
+                }
+            );
+        });
+}
