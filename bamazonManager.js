@@ -52,7 +52,7 @@ function displayProducts() { // displays all products available for sale
 function displayLowInventory() { // displays all products with inventory count lower than five
     connection.query("SELECT product_id,product_name,price,stock_quantity FROM products WHERE stock_quantity<5", function (err, results) {
         if (err) throw err;
-        if (results) {
+        if (results.length > 0) {
             console.table(results);
         } else {
             console.log("All products are sufficiently stocked.")
